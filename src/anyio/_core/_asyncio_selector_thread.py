@@ -129,31 +129,34 @@ class Selector:
 
     def run(self) -> None:
         while not self._closed:
-            for key, events in self._selector.select():
-                if key.fileobj is self._receive:
-                    try:
-                        while self._receive.recv(4096):
+            try:
+                for key, events in self._selector.select():
+                    if key.fileobj is self._receive:
+                        try:
+                            while self._receive.recv(4096):
+                                pass
+                        except BlockingIOError:
                             pass
-                    except BlockingIOError:
-                        pass
 
-                    continue
+                        continue
 
-                if events & EVENT_READ:
-                    loop, callback = key.data[EVENT_READ]
-                    self.remove_reader(key.fd)
-                    try:
-                        loop.call_soon_threadsafe(callback)
-                    except RuntimeError:
-                        pass  # the loop was already closed
+                    if events & EVENT_READ:
+                        loop, callback = key.data[EVENT_READ]
+                        self.remove_reader(key.fd)
+                        try:
+                            loop.call_soon_threadsafe(callback)
+                        except RuntimeError:
+                            pass  # the loop was already closed
 
-                if events & EVENT_WRITE:
-                    loop, callback = key.data[EVENT_WRITE]
-                    self.remove_writer(key.fd)
-                    try:
-                        loop.call_soon_threadsafe(callback)
-                    except RuntimeError:
-                        pass  # the loop was already closed
+                    if events & EVENT_WRITE:
+                        loop, callback = key.data[EVENT_WRITE]
+                        self.remove_writer(key.fd)
+                        try:
+                            loop.call_soon_threadsafe(callback)
+                        except RuntimeError:
+                            pass  # the loop was already closed
+            except OSError:
+                pass  # a socket was closed
 
 
 def get_selector() -> Selector:
