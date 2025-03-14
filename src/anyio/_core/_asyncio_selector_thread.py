@@ -167,11 +167,11 @@ class Selector:
                 # Unregister any closed descriptors
                 for key in list(self._selector.get_map().values()):
                     print(f"{key.fileobj=}")
-                    print(f"{key.fileobj.fileno()=}")
                     try:
                         fileno = key.fileobj.fileno()
                     except BaseException:
                         fileno = -1
+                    print(f"{fileno=}")
                     if fileno == -1:
                         self._selector.unregister(key.fileobj)
                         for loop, callback in key.data.values():
