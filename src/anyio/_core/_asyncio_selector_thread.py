@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import errno
 import socket
 import threading
 from collections.abc import Callable
@@ -155,10 +156,24 @@ class Selector:
                             loop.call_soon_threadsafe(callback)
                         except RuntimeError:
                             pass  # the loop was already closed
-            except BaseException as exc:
+            except OSError as exc:
                 import traceback
                 print(f"{exc=}")
                 print("".join(traceback.format_tb(exc.__traceback__)))
+
+                if exc.errno != getattr(errno, "WSAENOTSOCK", errno.EBADF):
+                    raise
+
+                # Unregister any closed descriptors
+                for key in list(self._selector.get_map().values()):
+                    print(f"{key.fileobj.fileno()=}")
+                    if key.fileobj.fileno() == -1:
+                        self._selector.unregister(key.fileobj)
+                        for loop, callback in key.data.values():
+                            try:
+                                loop.call_soon_threadsafe(callback)
+                            except RuntimeError:
+                                pass  # the loop was already closed
 
 
 def get_selector() -> Selector:
