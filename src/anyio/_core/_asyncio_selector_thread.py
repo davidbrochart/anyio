@@ -168,7 +168,11 @@ class Selector:
                 for key in list(self._selector.get_map().values()):
                     print(f"{key.fileobj=}")
                     print(f"{key.fileobj.fileno()=}")
-                    if key.fileobj.fileno() == -1:
+                    try:
+                        fileno = key.fileobj.fileno()
+                    except BaseException:
+                        fileno = -1
+                    if fileno == -1:
                         self._selector.unregister(key.fileobj)
                         for loop, callback in key.data.values():
                             try:
