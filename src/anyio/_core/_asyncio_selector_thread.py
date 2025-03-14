@@ -166,6 +166,7 @@ class Selector:
 
                 # Unregister any closed descriptors
                 for key in list(self._selector.get_map().values()):
+                    print(f"{key.fileobj=}")
                     print(f"{key.fileobj.fileno()=}")
                     if key.fileobj.fileno() == -1:
                         self._selector.unregister(key.fileobj)
