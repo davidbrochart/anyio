@@ -2702,8 +2702,8 @@ class AsyncIOBackend(AsyncBackend):
             read_events = {}
             _read_events.set(read_events)
 
-        if not isinstance(obj, int):
-            obj = obj.fileno()
+        #if not isinstance(obj, int):
+        #    obj = obj.fileno()
 
         if read_events.get(obj):
             raise BusyResourceError("reading from")
