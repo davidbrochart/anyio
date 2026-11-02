@@ -65,6 +65,35 @@ To receive incoming TCP connections, you first create a TCP listener with
 
 See the section on :ref:`TLS` for more information.
 
+Sending files
+-------------
+
+:meth:`~.abc.SocketStream.sendfile` sends an open binary file to the peer. The optional
+``offset`` and ``count`` arguments select a byte range; the return value is the number
+of bytes sent. Reaching the end of the file before ``count`` bytes have been sent is
+not an error.
+
+On asyncio, file transfers use the event loop's ``sendfile()`` API so that preceding
+writes buffered by the transport are sent first. On Trio and raw UNIX sockets,
+nonblocking native file transfers are used where supported. If native transfer is
+unavailable, AnyIO reads the file in a worker thread and sends chunks through the
+stream. The socket is never switched to blocking mode.
+
+The built-in socket streams reject simultaneous ``send()`` or ``sendfile()`` calls
+with :exc:`BusyResourceError`. Receiving data concurrently remains supported. Transfers
+can be cancelled while waiting for a slow peer, and closing the stream interrupts a
+blocked transfer. An individual file read already running in a worker thread must
+finish before cancellation completes.
+
+The file must not be used concurrently during a transfer. Its position is updated to
+reflect the bytes sent. In the copying fallback, an interrupted transfer counts only
+fully sent chunks; the last chunk may have been partially transmitted. Applications
+should not retry a cancelled transfer on the same connection based solely on the file
+position.
+
+This API is available on socket streams, including UNIX socket streams; it is not
+exposed by TLS stream wrappers.
+
 Working with UNIX sockets
 -------------------------
 
